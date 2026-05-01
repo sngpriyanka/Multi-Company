@@ -9,28 +9,37 @@ import apiRoutes from './routes/index.js'
 
 const app = express()
 
-// CORS configuration - allow multiple origins in development
+// CORS configuration - Improved for production + mobile
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow all in development for dynamic ports/network IPs
-    if (env.nodeEnv === 'development') {
-      callback(null, true)
-      return
-    }
-    
-    // Production: only configured clientUrl
-    const allowedOrigins = [env.clientUrl]
+    const allowedOrigins = [
+      env.clientUrl,                    // Your Vercel frontend
+      'https://multi-company-frontend-a3qp.vercel.app',
+      'http://localhost:3000',
+      'http://localhost:5173',          // Vite default
+    ];
+
+    // Allow requests with no origin (like mobile apps, Postman, curl)
     if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true)
+      callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'))
+      console.log(`Blocked origin: ${origin}`); // For debugging
+      callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-}
+  credentials: true,                    // Important for cookies/auth
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'X-Requested-With',
+    'x-auth-token'
+  ],
+  exposedHeaders: ['Authorization'],
+  maxAge: 86400, // 24 hours
+};
 
+app.use(cors(corsOptions));
 app.use(cors(corsOptions))
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
